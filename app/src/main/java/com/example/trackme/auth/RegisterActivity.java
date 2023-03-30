@@ -1,8 +1,10 @@
 package com.example.trackme.auth;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.StyleableRes;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -25,6 +27,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.github.muddz.styleabletoast.StyleableToast;
+
 public class RegisterActivity extends AppCompatActivity {
 
     EditText email;
@@ -35,6 +39,8 @@ public class RegisterActivity extends AppCompatActivity {
     FirebaseAuth firebaseAuth;
     FirebaseFirestore firebaseFirestore;
     DocumentReference ref;
+
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,11 +57,16 @@ public class RegisterActivity extends AppCompatActivity {
         daftarakun.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                progressDialog = new ProgressDialog(RegisterActivity.this);
+                progressDialog.setMessage("Sabar Cuy...");
+                progressDialog.setCancelable(false);
+                progressDialog.show();
                 firebaseAuth.createUserWithEmailAndPassword(email.getText().toString(), password.getText().toString())
                         .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                             @Override
                             public void onComplete(@NonNull Task<AuthResult> task) {
                                 if (task.isSuccessful()) {
+                                    progressDialog.dismiss();
                                     Map<String, Object> register_sukses = new HashMap<>();
                                     register_sukses.put("name", nama.getText().toString());
                                     register_sukses.put("email", email.getText().toString());
@@ -68,11 +79,12 @@ public class RegisterActivity extends AppCompatActivity {
                                         public void onSuccess(DocumentReference documentReference) {
                                             Intent intent = new Intent(RegisterActivity.this, DashboardActivity.class);
                                             startActivity(intent);
-                                            Toast.makeText(RegisterActivity.this, "Buat akun berhasil", Toast.LENGTH_SHORT).show();
+                                            StyleableToast.makeText(RegisterActivity.this, "Berhasil Buat Akun", R.style.ToastBerhasil).show();
                                         }
                                     });
                                 } else {
-                                    Toast.makeText(RegisterActivity.this, "Buat akun gagal", Toast.LENGTH_SHORT).show();
+                                    progressDialog.dismiss();
+                                    StyleableToast.makeText(RegisterActivity.this, "Gagal Buat Akun", R.style.ToastGagal).show();
                                 }
                             }
                         });

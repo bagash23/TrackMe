@@ -47,6 +47,8 @@ dependencies {
     }
     implementation 'com.karumi:dexter:6.0.1'
     implementation 'com.google.android.gms:play-services-location:18.0.0'
+//    toast lib
+    implementation 'io.github.muddz:styleabletoast:2.4.0'
 
 
 }

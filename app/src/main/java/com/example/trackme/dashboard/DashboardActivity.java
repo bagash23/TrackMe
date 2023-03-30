@@ -3,18 +3,25 @@ package com.example.trackme.dashboard;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.pm.PackageManager;
+import android.location.Address;
 import android.location.Geocoder;
 
+import com.example.trackme.auth.LoginActivity;
 import com.example.trackme.utiils.AdapterLokasi;
 import com.example.trackme.utiils.ListLokasiPengguna;
 import com.google.android.gms.location.LocationServices;
 
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -43,6 +50,8 @@ import java.net.URI;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
+import io.github.muddz.styleabletoast.StyleableToast;
+
 
 public class DashboardActivity extends AppCompatActivity {
 
@@ -57,6 +66,10 @@ public class DashboardActivity extends AppCompatActivity {
     Button btn_get_lokasi;
     RecyclerView recyclerView;
     Button btn_lokasi;
+
+    ProgressDialog progressDialog;
+
+    private final static  int  REQUEST_CODE = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +86,7 @@ public class DashboardActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 getLocation();
-                Toast.makeText(DashboardActivity.this, "pencet", Toast.LENGTH_SHORT).show();
+                StyleableToast.makeText(DashboardActivity.this, "Berhasil Mengirimkan Lokasi", R.style.ToastInformasi).show();
             }
         });
 
@@ -83,12 +96,12 @@ public class DashboardActivity extends AppCompatActivity {
         lokasiReference = db.collection("locations");
         TextView username = findViewById(R.id.namekamu);
 //        pemanggilan data user
-        userReference.get().addOnSuccessListener(queryDocumentSnapshots -> {
-            for (QueryDocumentSnapshot documt : queryDocumentSnapshots) {
-                String name = documt.getString("name");
-                username.setText(name);
-            }
-        });
+//        userReference.get().addOnSuccessListener(queryDocumentSnapshots -> {
+//            for (QueryDocumentSnapshot documt : queryDocumentSnapshots) {
+//                String name = documt.getString("name");
+//                username.setText(name);
+//            }
+//        });
 
 
 
@@ -111,61 +124,131 @@ public class DashboardActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 10) {
-            if (ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this,
-                            Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == 10) {
+//            if (ActivityCompat.checkSelfPermission(this,
+//                    Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+//                    ActivityCompat.checkSelfPermission(this,
+//                            Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+//
+//                Toast.makeText(getApplicationContext(), "izin lokasi tidak di aktifkan", Toast.LENGTH_SHORT).show();
+//
+//            }else {
+//                getLocation();
+//            }
+//        }
+//    }
+//
+//    private void getLocation() {
+//        if (ActivityCompat.checkSelfPermission(this,
+//                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+//                ActivityCompat.checkSelfPermission(this,
+//                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            requestPermissions(new String[]{
+//                    Manifest.permission.ACCESS_FINE_LOCATION,
+//                    Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
+//
+//        } else {
+//            fusedLocationProvider.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+//                @Override
+//                public void onSuccess(Location location) {
+//                    Map<String, Object> dataLocation = new HashMap<>();
+//                    System.out.println(location.getLatitude());
+//                    String uri = "geo:" + location.getLatitude() + "," + location.getLongitude() + "?q=" + location.getLatitude() + "," + location.getLongitude();
+//                    dataLocation.put("namePengirim", userAuth.getCurrentUser().getEmail());
+//                    dataLocation.put("uri", uri);
+//
+//                    try {
+//                        db.collection("locations").add(dataLocation);
+//                        System.out.println("Data saved successfully.");
+//                    } catch (Exception e) {
+//                        System.err.println("Error saving data: " + e.getMessage());
+//                    }
+//                }
+//            }).addOnFailureListener(new OnFailureListener() {
+//                @Override
+//                public void onFailure(@NonNull Exception e) {
+//                    Toast.makeText(DashboardActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+//                }
+//            });
+//        }
+//
+//    }
 
-                Toast.makeText(getApplicationContext(), "izin lokasi tidak di aktifkan", Toast.LENGTH_SHORT).show();
-                
-            }else {
-                getLocation();
-            }
+
+    private void getLocation(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED){
+
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("Memuat Ulang...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
+            fusedLocationProvider.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            if (location != null) {
+                                    progressDialog.dismiss();
+                                    Map<String, Object> data = new HashMap<>();
+                                    String uri = "geo:" + location.getLatitude() + "," + location.getLongitude() + "?q=" + location.getLatitude() + "," + location.getLongitude();
+                                    data.put("namePengirim", userAuth.getCurrentUser().getEmail());
+                                    data.put("uri", uri);
+                                    db.collection("locations").add(data);
+                                    updateView();
+                            }else {
+                                Log.d("GEO ", location.getLatitude() + "," + location.getLongitude());
+                            }
+                        }
+                    });
+        } else {
+            askPermission();
         }
     }
 
-    private void getLocation() {
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
+    private void updateView(){
+        FirebaseFirestore dbs = FirebaseFirestore.getInstance();
+        CollectionReference tambahMasukRef = dbs.collection("locations");
 
-        } else {
-            fusedLocationProvider.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    Map<String, Object> dataLocation = new HashMap<>();
-//                    dataLocation.put("latitude", String.valueOf(location.getLatitude()));
-//                    dataLocation.put("Longitude", String.valueOf(location.getLongitude()));
-//                    menjadikan data url
-                    String base_url = "https://www.google.com/maps?q=";
-                    String locationString = new DecimalFormat("#.#####").format(location.getLatitude())
-                            + "," + new DecimalFormat("#.#####").format(location.getLongitude());
-                    String uri = "geo:" + location.getLatitude() + "," + location.getLongitude() + "?q=" + location.getLatitude() + "," + location.getLongitude();
-                    dataLocation.put("namePengirim", userAuth.getCurrentUser().getEmail());
-                    dataLocation.put("uri", uri);
+        tambahMasukRef.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                List<ListLokasiPengguna> listlokasi1 = new ArrayList<>();
+                for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                    ListLokasiPengguna lokasi1 = new ListLokasiPengguna(documentSnapshot.getString("namePengirim"), documentSnapshot.getString("uri"));
+                    listlokasi1.add(lokasi1);
+                    System.out.println("show list");
 
-                    try {
-                        db.collection("locations").add(dataLocation);
-                        System.out.println("Data saved successfully.");
-                    } catch (Exception e) {
-                        System.err.println("Error saving data: " + e.getMessage());
-                    }
                 }
-            }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Toast.makeText(DashboardActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
+                StyleableToast.makeText(DashboardActivity.this, "Berhasil Update Data Lokasi", R.style.ToastInformasi).show();
+                AdapterLokasi adapterLokasi = new AdapterLokasi(listlokasi1);
+                recyclerView.setAdapter(adapterLokasi);
+            }
+        });
+
+    }
+
+    private void askPermission(){
+        ActivityCompat.requestPermissions(this, new String[]
+                {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        if (requestCode == REQUEST_CODE) {
+
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getLocation();
+            } else {
+                Toast.makeText(this, "ERROR", Toast.LENGTH_LONG).show();
+            }
         }
+
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
     }
 }

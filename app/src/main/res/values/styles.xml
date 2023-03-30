@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ToastBerhasil">
+        <item name="stColorBackground">#7AA874</item>
+        <item name="stTextColor">#ffffff</item>
+        <item name="stIconStart">@drawable/baseline_check_circle_24</item>
+        <item name="stGravity">top</item>
+        <item name="stLength">LONG</item>
+        <item name="stRadius">5dp</item>
+    </style>
+    <style name="ToastGagal">
+        <item name="stColorBackground">#FC2947</item>
+        <item name="stTextColor">#ffffff</item>
+        <item name="stIconStart">@drawable/ic_close_24</item>
+        <item name="stGravity">top</item>
+        <item name="stLength">LONG</item>
+        <item name="stRadius">5dp</item>
+    </style>
+    <style name="ToastInformasi">
+        <item name="stColorBackground">#19A7CE</item>
+        <item name="stTextColor">#ffffff</item>
+        <item name="stIconStart">@drawable/ic_send</item>
+        <item name="stGravity">top</item>
+        <item name="stLength">LONG</item>
+        <item name="stRadius">5dp</item>
+    </style>
+
+</resources>

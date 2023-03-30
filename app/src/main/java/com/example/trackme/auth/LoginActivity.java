@@ -3,6 +3,7 @@ package com.example.trackme.auth;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -19,11 +20,15 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import io.github.muddz.styleabletoast.StyleableToast;
+
 public class LoginActivity extends AppCompatActivity {
     FirebaseAuth firebaseAuth;
     EditText email;
     EditText password;
     Button button;
+
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,15 +42,23 @@ public class LoginActivity extends AppCompatActivity {
                 button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        progressDialog = new ProgressDialog(LoginActivity.this);
+                        progressDialog.setMessage("Sabar Cuy...");
+                        progressDialog.setCancelable(false);
+                        progressDialog.show();
                         firebaseAuth.signInWithEmailAndPassword(email.getText().toString(), password.getText().toString()).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                             @Override
                             public void onComplete(@NonNull Task<AuthResult> task) {
                                 if (task.isSuccessful()){
+                                    progressDialog.dismiss();
                                     Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
                                     startActivity(intent);
-                                    Toast.makeText(LoginActivity.this, "Berhasil masuk", Toast.LENGTH_SHORT).show();
+                                    finishAffinity();
+                                    StyleableToast.makeText(LoginActivity.this, "Berhasil Buat Akun", R.style.ToastBerhasil).show();
+
                                 } else {
-                                    Toast.makeText(LoginActivity.this, "Gagal masuk", Toast.LENGTH_SHORT).show();
+                                    progressDialog.dismiss();
+                                    StyleableToast.makeText(LoginActivity.this, "Gagal Buat Akun", R.style.ToastGagal).show();
                                     button.setEnabled(true);
                                 }
                             }
